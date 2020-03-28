@@ -1,0 +1,32 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h4 class="pt2">Registerd Host Machines
+	<a href="{{url_for('addhost')}}" class="btn btn-success btn-sm float-right">Add New Host</a></h4>
+</h4>
+<div class="border-top pt-2 mb-4"></div>
+{% if regs_host_count != 0 %}
+	{% for i in regs_hosts.items %}
+	<div class="alert alert-dark" role="alert">
+  		<p>IP Address : {{i.ipaddress}}</p>
+  		<p>Host Name : {{i.hostname}}
+  		 <a class="btn btn-secondary btn-sm float-right  ml-2 " href="#" role="button">View</a>
+  		 <a class="btn btn-danger btn-sm float-right  ml-2 " href="{{url_for('delete_host_machine',host_id=i.id)}}" role="button">Delete</a></p>
+	</div>
+	{% endfor %}
+	<div class="rounded-0 col-lg-13 mx-auto">
+    	{% for page_num in regs_hosts.iter_pages(left_edge=1,right_edge=1,left_current=1,right_current=2) %}
+      		{% if page_num %}
+        		{% if regs_hosts.page == page_num %}
+          			<a class="btn btn-info mb-4 mt-2" href="{{ url_for('register_host',page=page_num)}}">{{ page_num }}</a>
+        		{% else %}
+          			<a class="btn btn-outline-info mb-4 mt-2" href="{{ url_for('register_host',page=page_num)}}">{{ page_num }}</a>
+        		{% endif %}  
+      		{% else %}
+        			...
+      		{% endif %}
+    	{% endfor %}
+   	</div>	
+{% else %}
+	<p>No Record for Remote Host Machines</p>
+{% endif %}
+{% endblock content %}
