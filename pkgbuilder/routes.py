@@ -13,6 +13,7 @@ import shutil
 import pathlib
 from pathlib import Path
 import subprocess
+import tarfile
 
 #Home Page
 @app.route('/',methods=['POST','GET'])
@@ -168,12 +169,16 @@ def build_test_pkg():
         #Download the newly created squashfs file
         ftp_client = client.open_sftp()
         ftp_client.get(form.raw_pkg_path.data+"/"+prefix[1]+".sq",pkg_build_path+str(pkg_build_id)+'/'+str(form.os_arch.data)+'-Bit'+'/'+prefix[0]+'/'+prefix[1]+'.sq')
+        #Remove sq after download
+        stdin,stdout,stderr = client.exec_command("rm -rf  "+form.raw_pkg_path.data+"/"+prefix[1]+'.sq')
+
 
         #Check if required patch
         if form.need_patch.data == True :
 
             #Create Firmware Patch work directory
-            os.makedirs(pkg_build_path+str(pkg_build_id)+'/Patch')
+            os.makedirs(pkg_build_path+str(pkg_build_id)+'/Patch/sda1/data/firmware_update/delete-pkg')
+            os.makedirs(pkg_build_path+str(pkg_build_id)+'/Patch/root')
 
             #Check if remove pkg textfield and install script field is empty
             if len(form.remove.data) == 0 and len(form.install_script.data) == 0:
@@ -211,8 +216,31 @@ def build_test_pkg():
                     f = open(pkg_build_path+str(pkg_build_id)+'/Patch/root/install',"a+")
                     f.write("#!/bin/bash\n")
 
-                    
+                    for i in " ".join(install_script_list):
+                        f.write(i)
 
+                    f.close()
+
+                    #Remove ^M from install script
+                    subprocess.call(["sed -i -e 's/\r//g' /var/www/html/Test_Packages/"+str(pkg_build_id)+"/Patch/root/install"],shell=True)
+
+                #CHMOD
+                subprocess.call(["chmod -R 755 /var/www/html/Test_Packages/"+str(pkg_build_id)],shell=True)
+
+                #Build Final Patch Tar
+                pkg_name = form.test_pkg_name.data
+                prefix = pkg_name.split(':',-1)
+                patchname = prefix[1]+'.tar.bz2'
+                tar_file_path = pkg_build_path+str(pkg_build_id)+'/Patch/'+patchname
+                tar = tarfile.open(tar_file_path,mode='w:bz2')
+                os.chdir(pkg_build_path+str(pkg_build_id)+'/Patch/')
+                tar.add(".")
+                tar.close()
+
+                #Damage Patch
+                cmd = "damage corrupt /var/www/html/Test_Packages/"+str(pkg_build_id)+'/Patch/'+patchname+" 1"
+                proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                o,e = proc.communicate()
         else:
             pass
         
