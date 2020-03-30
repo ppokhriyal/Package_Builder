@@ -1,7 +1,7 @@
 from flask import render_template, url_for, flash, redirect, request, abort, session
 from pkgbuilder import app, db, bcrypt, login_manager
 from pkgbuilder.forms import RegistrationForm, LoginForm,AddHostMachineForm,BuildTestPackageForm
-from pkgbuilder.models import User,Register_Host
+from pkgbuilder.models import User,Register_Host,Pkgdetails
 from flask_login import login_user, current_user, logout_user, login_required
 import paramiko
 import time
@@ -36,8 +36,6 @@ def login():
             flash('Login Unsuccessful. Please check email or password','danger')
     return render_template('login.html',title='Login',form=form)
 
-
-
 #Register Page
 @app.route('/register',methods=['GET','POST'])
 def register():
@@ -61,7 +59,23 @@ def register_host():
     page = request.args.get('page',1,type=int)
     regs_host_count = db.session.query(Register_Host).count()
     regs_hosts = Register_Host.query.paginate(page=page,per_page=4)
-    return render_template('host_register.html',title='Register Host Machine',regs_hosts=regs_hosts,regs_host_count=regs_host_count)
+    #Check the status of the Remote Host machines
+    remote_ip_status = []
+    for i in db.session.query(Register_Host).all():
+        try:
+            client = paramiko.SSHClient()
+            client.load_system_host_keys()
+            client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
+            client.connect(str(i),timeout=2)
+            stdin, stdout, stderr = client.exec_command("hostname")
+            if stdout.channel.recv_exit_status() != 0:
+                remote_ip_status = 'Down'
+            else:
+                remote_ip_status = 'Running'
+        except Exception as e:
+            print(e)
+
+    return render_template('host_register.html',title='Register Host Machine',regs_hosts=regs_hosts,regs_host_count=regs_host_count,remote_ip_status=remote_ip_status)
 
 #Add Host Machine
 @app.route('/addhost',methods=['POST','GET'])
@@ -169,6 +183,12 @@ def build_test_pkg():
         #Download the newly created squashfs file
         ftp_client = client.open_sftp()
         ftp_client.get(form.raw_pkg_path.data+"/"+prefix[1]+".sq",pkg_build_path+str(pkg_build_id)+'/'+str(form.os_arch.data)+'-Bit'+'/'+prefix[0]+'/'+prefix[1]+'.sq')
+        #MD5SUM Package
+        cmd = "md5sum /var/www/html/Test_Packages/"+str(pkg_build_id)+'/'+str(form.os_arch.data)+'-Bit'+'/'+prefix[0]+'/'+prefix[1]+'.sq'
+        proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        o,e = proc.communicate()
+        md5sum = o.decode('utf8')
+        pkg_md5sum = md5sum[:32]
         #Remove sq after download
         stdin,stdout,stderr = client.exec_command("rm -rf  "+form.raw_pkg_path.data+"/"+prefix[1]+'.sq')
 
@@ -241,10 +261,21 @@ def build_test_pkg():
                 cmd = "damage corrupt /var/www/html/Test_Packages/"+str(pkg_build_id)+'/Patch/'+patchname+" 1"
                 proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                 o,e = proc.communicate()
+
+                #MD5SUM of Patch
+                cmd = "md5sum /var/www/html/Test_Packages/"+str(pkg_build_id)+"/Patch/"+patchname
+                proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                o,e = proc.communicate()
+                md5sum = o.decode('utf8')
+                patch_md5sum = md5sum[:32]
         else:
             pass
         
-
+        #Update the Database
+        pkg_update = Pkgdetails(pkgbuild_id=form.test_pkg_build_id.data,pkgname=prefix[1],description=form.test_pkg_description.data,md5sum_pkg=pkg_md5sum,md5sum_patch=patch_md5sum,os_arch=form.os_arch.data)
+        db.session.add(pkg_update)
+        db.session.commit()
+        
         return redirect(url_for('home'))
     return render_template('build_test_pkg.html',title='Build Test Package',form=form,pkg_build_id=pkg_build_id)
 

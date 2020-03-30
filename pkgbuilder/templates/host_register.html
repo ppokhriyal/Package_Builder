@@ -6,18 +6,30 @@
 <div class="border-top pt-2 mb-4"></div>
 {% if regs_host_count != 0 %}
 	{% for i in regs_hosts.items %}
-	<div class="alert alert-dark" role="alert">
-  		<p>IP Address : {{i.ipaddress}}</p>
-  		<p>Host Name : {{i.hostname}}
-  		 <a class="btn btn-secondary btn-sm float-right  ml-2 " href="#" role="button">View</a>
-  		 <a class="btn btn-danger btn-sm float-right  ml-2 " href="{{url_for('delete_host_machine',host_id=i.id)}}" role="button">Delete</a></p>
-	</div>
+    <div class="card">
+      <div class="card-body bg-light">
+        <div class="d-inline p-2 bg-primary text-white">IPAddress</div>
+        <div class="d-inline p-2 bg-dark text-white">{{i.ipaddress}}</div>
+        <div class="d-inline p-2 bg-primary text-white">Hostname</div>
+        <div class="d-inline p-2 bg-dark text-white">{{i.hostname}}</div>
+        <div class="d-inline p-2 ml-1 bg-primary text-white">Status</div>
+        {%if remote_ip_status == 'Running'%}
+          <div class="d-inline p-2 bg-dark text-white"><i class="fas fa-thumbs-up"></i> Running</div>
+        {% else %}
+          <div class="d-inline p-2 bg-dark text-white"><i class="fas fa-thumbs-down"></i> Down</div>
+        {% endif %}
+      </div>
+      <div class="card-footer">
+        <a class="btn-sm btn-danger float-right text-decoration-none " href="{{url_for('delete_host_machine',host_id=i.id)}}" role="button">Remove</a>
+        <a class="btn-sm btn-info mr-2 float-right text-decoration-none " href="#" role="button">View Details</a>
+      </div>
+    </div>
 	{% endfor %}
 	<div class="rounded-0 col-lg-13 mx-auto">
     	{% for page_num in regs_hosts.iter_pages(left_edge=1,right_edge=1,left_current=1,right_current=2) %}
       		{% if page_num %}
         		{% if regs_hosts.page == page_num %}
-          			<a class="btn btn-info mb-4 mt-2" href="{{ url_for('register_host',page=page_num)}}">{{ page_num }}</a>
+          			<a class="btn btn-secondary mb-4 mt-2" href="{{ url_for('register_host',page=page_num)}}">{{ page_num }}</a>
         		{% else %}
           			<a class="btn btn-outline-info mb-4 mt-2" href="{{ url_for('register_host',page=page_num)}}">{{ page_num }}</a>
         		{% endif %}  
