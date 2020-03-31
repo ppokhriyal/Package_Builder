@@ -275,6 +275,9 @@ def build_test_pkg():
                 db.session.add(pkg_update)
                 db.session.commit()
         
+                #Finish
+                Path(pkg_build_path+str(pkg_build_id)+"/"+"finish.true").touch()
+                
                 return redirect(url_for('home'))
         else:
 
@@ -284,9 +287,28 @@ def build_test_pkg():
             pkg_update = Pkgdetails(pkgbuild_id=str(pkg_build_id),author=current_user,pkgname=prefix[1],description=form.test_pkg_description.data,md5sum_pkg=pkg_md5sum,md5sum_patch=patch_md5sum,os_arch=form.os_arch.data)
             db.session.add(pkg_update)
             db.session.commit()
-        
+            
+            #Finish
+            Path(pkg_build_path+str(pkg_build_id)+"/"+"finish.true").touch()
+
             return redirect(url_for('home'))
     return render_template('build_test_pkg.html',title='Build Test Package',form=form,pkg_build_id=pkg_build_id)
+
+
+#Delete the Package permanantly
+@app.route('/delete_pkg/<int:pkg_id>',methods=['POST','GET'])
+def delete_pkg(pkg_id):
+    pkg_info = Pkgdetails.query.get_or_404(pkg_id)
+
+    if pkg_info.author != current_user:
+        abort(403)
+    db.session.delete(pkg_info)
+    db.session.commit()
+    pkgbuild = pkg_info.pkgbuild_id
+    shutil.rmtree(pkg_build_path+str(pkgbuild))
+
+    flash('Package has been deleted!','success')
+    return redirect(url_for('home'))
 
 #Logout
 @app.route('/logout')
