@@ -1,5 +1,41 @@
 {% extends 'layout.html' %}
 {% block content %}
 	<h4 class="pt2">Package Build History</h4>
-<div class="border-top pt-2 mb-4"></div>
+<div class="border-top pt-2 "></div>
+{% if pkg_count == 0 %}
+	<p>No Package Build Found !!</p>
+{% else %}
+	{% for pkg in package.items %}
+		<div class="card mb-3">
+			<div class="card-header">
+				{{pkg.pkgname}} [ Build Id : {{pkg.pkgbuild_id}} ]
+			</div>
+			<div class="card-body">
+				<p class="card-text">{{ pkg.description | safe }}</p>
+				<div class="border-top pt-2"></div>
+				<small>Package Md5sum : {{pkg.md5sum_pkg}} | Patch Md5sum   : {{pkg.md5sum_patch}}</small>
+			</div>
+			<div class="card-footer">
+				<small>Package Build by : {{pkg.author.username}} | Package Build on : {{ pkg.date_posted.strftime('%d-%m-%Y')}}</small>
+				{% if pkg.author == current_user %}
+					<a href="#" class="badge badge-primary float-right">Move to Final Build</a>
+					<a href="#" class="badge badge-danger mr-2 float-right">Delete</a>
+				{% endif %}
+			</div>
+		</div>
+	{% endfor %}
+	<div class="rounded-0 col-lg-13 mx-auto">
+    		{% for page_num in package.iter_pages(left_edge=1,right_edge=1,left_current=1,right_current=2) %}
+      			{% if page_num %}
+        			{% if package.page == page_num %}
+          				<a class="btn btn-secondary mb-4 mt-2" href="{{ url_for('home',page=page_num)}}">{{ page_num }}</a>
+        			{% else %}
+          				<a class="btn btn-outline-info mb-4 mt-2" href="{{ url_for('home',page=page_num)}}">{{ page_num }}</a>
+        			{% endif %}  
+      			{% else %}
+        			...
+      			{% endif %}
+    		{% endfor %}
+   		</div>	
+{% endif %}
 {% endblock content %}

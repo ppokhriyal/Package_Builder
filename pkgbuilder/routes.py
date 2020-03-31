@@ -18,8 +18,10 @@ import tarfile
 #Home Page
 @app.route('/',methods=['POST','GET'])
 def home():
-
-    return render_template('home.html',title='Home')
+    pkg_count = len(db.session.query(Pkgdetails).all())
+    page = request.args.get('page',1,type=int)
+    package = Pkgdetails.query.order_by(Pkgdetails.date_posted.desc()).paginate(page=page,per_page=4)
+    return render_template('home.html',title='Home',pkg_count=pkg_count,package=package)
 
 
 #Login Page
@@ -269,14 +271,15 @@ def build_test_pkg():
                 md5sum = o.decode('utf8')
                 patch_md5sum = md5sum[:32]
         else:
-            pass
+
+            patch_md5sum = 'None'
         
-        #Update the Database
-        pkg_update = Pkgdetails(pkgbuild_id=form.test_pkg_build_id.data,pkgname=prefix[1],description=form.test_pkg_description.data,md5sum_pkg=pkg_md5sum,md5sum_patch=patch_md5sum,os_arch=form.os_arch.data)
-        db.session.add(pkg_update)
-        db.session.commit()
+            #Update the Database
+            pkg_update = Pkgdetails(pkgbuild_id=str(pkg_build_id),author=current_user,pkgname=prefix[1],description=form.test_pkg_description.data,md5sum_pkg=pkg_md5sum,md5sum_patch=patch_md5sum,os_arch=form.os_arch.data)
+            db.session.add(pkg_update)
+            db.session.commit()
         
-        return redirect(url_for('home'))
+            return redirect(url_for('home'))
     return render_template('build_test_pkg.html',title='Build Test Package',form=form,pkg_build_id=pkg_build_id)
 
 #Logout

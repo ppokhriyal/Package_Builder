@@ -3,7 +3,7 @@
 <h4 class="pt2">Registerd Host Machines
 	<a href="{{url_for('addhost')}}" class="btn btn-success btn-sm float-right">Add New Host</a></h4>
 </h4>
-<div class="border-top pt-2 mb-4"></div>
+<div class="border-top pt-2"></div>
 {% if regs_host_count != 0 %}
 	{% for i in regs_hosts.items %}
     <div class="card">
@@ -21,7 +21,6 @@
       </div>
       <div class="card-footer">
         <a class="btn-sm btn-danger float-right text-decoration-none " href="{{url_for('delete_host_machine',host_id=i.id)}}" role="button">Remove</a>
-        <a class="btn-sm btn-info mr-2 float-right text-decoration-none " href="#" role="button">View Details</a>
       </div>
     </div>
 	{% endfor %}
