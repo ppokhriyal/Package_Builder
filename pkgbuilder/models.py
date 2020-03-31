@@ -40,7 +40,7 @@ class Register_Host(db.Model):
 	id = db.Column(db.Integer,primary_key=True)
 	ipaddress = db.Column(db.String(20),unique=True,nullable=False)
 	hostname = db.Column(db.String(20),unique=True,nullable=False)
-	user_id = db.Column(db.Integer, db.ForeignKey('user.id'),nullable=False)
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 	def __repr__(self):
 		return f"{self.ipaddress}"

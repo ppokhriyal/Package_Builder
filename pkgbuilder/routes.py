@@ -100,7 +100,7 @@ def addhost():
             for line in stdout:
                 print(line)
             try:
-                rmhost = Register_Host(ipaddress=remote_host_ip,hostname=line)
+                rmhost = Register_Host(ipaddress=remote_host_ip,hostname=line,register_remote_host=current_user)
                 db.session.add(rmhost)
                 db.session.commit()
 
@@ -113,7 +113,7 @@ def addhost():
             return redirect(url_for('addhost'))
 
         flash(f"Remote Host Machine added successfully",'success')  
-        return redirect(url_for('register_host'))   
+        return redirect(url_for('register_host')) 
     return render_template('addhost.html',title='Add Host Machine',form=form,publickey_content=publickey_content)
 
 #Delete Registered Host Machine
@@ -270,6 +270,12 @@ def build_test_pkg():
                 o,e = proc.communicate()
                 md5sum = o.decode('utf8')
                 patch_md5sum = md5sum[:32]
+                #Update the Database
+                pkg_update = Pkgdetails(pkgbuild_id=str(pkg_build_id),author=current_user,pkgname=prefix[1],description=form.test_pkg_description.data,md5sum_pkg=pkg_md5sum,md5sum_patch=patch_md5sum,os_arch=form.os_arch.data)
+                db.session.add(pkg_update)
+                db.session.commit()
+        
+                return redirect(url_for('home'))
         else:
 
             patch_md5sum = 'None'

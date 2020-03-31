@@ -19,9 +19,11 @@
           <div class="d-inline p-2 bg-dark text-white"><i class="fas fa-thumbs-down"></i> Down</div>
         {% endif %}
       </div>
-      <div class="card-footer">
-        <a class="btn-sm btn-danger float-right text-decoration-none " href="{{url_for('delete_host_machine',host_id=i.id)}}" role="button">Remove</a>
-      </div>
+      {% if i.register_remote_host == current_user %}
+        <div class="card-footer">
+          <a class="btn-sm btn-danger float-right text-decoration-none " href="{{url_for('delete_host_machine',host_id=i.id)}}" role="button">Remove</a>
+        </div>
+      {% endif %}
     </div>
 	{% endfor %}
 	<div class="rounded-0 col-lg-13 mx-auto">
