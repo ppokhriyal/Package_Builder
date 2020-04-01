@@ -1,0 +1,49 @@
+{% extends 'layout.html' %}
+{% block content %}
+	<h4 class="pt2">Logs</h4>
+	<div class="border-top pt-2 mb-2"></div>
+	{% if log_count == 0 %}
+		<p>Empty Log Found !!</p>
+	{% else %}
+		{% for i in logs_info.items %}
+			<div class="card mb-2">
+				<div class="card-body bg-light">
+  					<div class="bd-example">
+  						<details open="">
+    						<summary><strong>Package Build Id</strong></summary>
+    							<p>{{i.pkgbuild_id}}</p>
+  						</details>
+  						<details>
+    						<summary><strong>Package Name</strong></summary>
+    							<p>{{i.pkgname}}</p>
+  						</details>
+  						<details>
+    						<summary><strong>Package Md5sum</strong></summary>
+    							<p>{{i.md5sum_pkg}}</p>
+  						</details>
+  						<details>
+    						<summary><strong>Patch Md5sum</strong></summary>
+    							<p>{{i.md5sum_patch}}</p>
+  						</details>
+					</div>
+  				</div>
+  				<div class="card-footer">
+  					<small>Package Build by : {{i.logmeup.username}}</small> | <small>Package Build on : {{ i.date_removed.strftime('%d-%m-%Y')}}</small>
+  				</div>	
+			</div>
+		{% endfor %}
+		<div class="rounded-0 col-lg-13 mx-auto">
+    		{% for page_num in logs_info.iter_pages(left_edge=1,right_edge=1,left_current=1,right_current=2) %}
+      			{% if page_num %}
+        			{% if logs_info.page == page_num %}
+          				<a class="btn btn-secondary mb-4 mt-2" href="{{ url_for('logs',page=page_num)}}">{{ page_num }}</a>
+        			{% else %}
+          				<a class="btn btn-outline-info mb-4 mt-2" href="{{ url_for('logs',page=page_num)}}">{{ page_num }}</a>
+        			{% endif %}  
+      			{% else %}
+        			...
+      			{% endif %}
+    		{% endfor %}
+   		</div>	
+	{% endif %}
+{% endblock content %}

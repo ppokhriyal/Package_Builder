@@ -17,6 +17,7 @@ class User(db.Model,UserMixin):
 	password_decrypted = db.Column(db.String(60),nullable=False)
 	pkg_info = db.relationship('Pkgdetails',backref='author',lazy=True,cascade='all,delete-orphan')
 	reg_host = db.relationship('Register_Host',backref='register_remote_host',lazy=True,cascade='all,delete-orphan')
+	log = db.relationship('Logs',backref='logmeup',lazy=True,cascade='all,delete-orphan')
 	
 	def __repr__(self):
 		return f"User('{self.username}','{self.email}')"
@@ -36,7 +37,6 @@ class Pkgdetails(db.Model):
 		return f"Pkgdetails('{self.pkgbuild_id}','{self.pkgname}','{self.description}','{self.md5sum_patch}')"
 	
 class Register_Host(db.Model):
-	
 	id = db.Column(db.Integer,primary_key=True)
 	ipaddress = db.Column(db.String(20),unique=True,nullable=False)
 	hostname = db.Column(db.String(20),unique=True,nullable=False)
@@ -44,3 +44,14 @@ class Register_Host(db.Model):
 
 	def __repr__(self):
 		return f"{self.ipaddress}"
+
+class Logs(db.Model):
+	id = db.Column(db.Integer,primary_key=True)
+	pkgbuild_id = db.Column(db.Integer,unique=True,nullable=False)
+	pkgname = db.Column(db.String(60),nullable=False)
+	date_removed = db.Column(db.DateTime(),nullable=False,default=datetime.utcnow)
+	md5sum_pkg = db.Column(db.String(50),nullable=False)
+	md5sum_patch = db.Column(db.String(50))
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+	def __repr__(self):
+		return f"Logs('{self.pkgbuild_id}','{self.pkgname}','{self.md5sum_pkg}','{self.md5sum_patch}')"

@@ -1,9 +1,9 @@
 {% extends 'layout.html' %}
 {% block content %}
 	<h4 class="pt2">Package Build History</h4>
-<div class="border-top pt-2 "></div>
+<div class="border-top pt-2 mb-2"></div>
 {% if pkg_count == 0 %}
-	<p>No Package Build Found !!</p>
+	<p>Empty Package Build History Found !!</p>
 {% else %}
 	{% for pkg in package.items %}
 		<div class="card mb-3">
@@ -18,7 +18,7 @@
 			<div class="card-footer">
 				<small>Package Build by : {{pkg.author.username}} | Package Build on : {{ pkg.date_posted.strftime('%d-%m-%Y')}}</small>
 				{% if pkg.author == current_user %}
-					<a href="#" class="badge badge-primary float-right">Move to Final Build</a>
+					<!--<a href="{{url_for('move_final_pkg',pkg_id=pkg.id)}}" class="badge badge-primary float-right">Move to Final Build</a>-->
 					<a href="{{url_for('delete_pkg',pkg_id=pkg.id)}}" class="badge badge-danger mr-2 float-right">Delete</a>
 				{% endif %}
 			</div>

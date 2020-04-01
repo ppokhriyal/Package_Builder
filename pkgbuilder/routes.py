@@ -1,7 +1,7 @@
 from flask import render_template, url_for, flash, redirect, request, abort, session
 from pkgbuilder import app, db, bcrypt, login_manager
 from pkgbuilder.forms import RegistrationForm, LoginForm,AddHostMachineForm,BuildTestPackageForm
-from pkgbuilder.models import User,Register_Host,Pkgdetails
+from pkgbuilder.models import User,Register_Host,Pkgdetails,Logs
 from flask_login import login_user, current_user, logout_user, login_required
 import paramiko
 import time
@@ -118,6 +118,7 @@ def addhost():
 
 #Delete Registered Host Machine
 @app.route('/delete_reg_hostmachine/<int:host_id>')
+@login_required
 def delete_host_machine(host_id):
     reg_host = Register_Host.query.get_or_404(host_id)
     db.session.delete(reg_host)
@@ -147,6 +148,7 @@ def test_pkg_build_area():
     
 #Building Test Package
 @app.route('/build_test_pkg',methods=['POST','GET'])
+@login_required
 def build_test_pkg():
     form = BuildTestPackageForm()
     test_pkg_build_area()
@@ -297,18 +299,59 @@ def build_test_pkg():
 
 #Delete the Package permanantly
 @app.route('/delete_pkg/<int:pkg_id>',methods=['POST','GET'])
+@login_required
 def delete_pkg(pkg_id):
+
     pkg_info = Pkgdetails.query.get_or_404(pkg_id)
+    log_info = Logs(pkgbuild_id=pkg_info.pkgbuild_id,pkgname=pkg_info.pkgname,md5sum_pkg=pkg_info.md5sum_pkg,md5sum_patch=pkg_info.md5sum_patch,logmeup=current_user)
+    db.session.add(log_info)
+    db.session.commit()
 
     if pkg_info.author != current_user:
         abort(403)
+
     db.session.delete(pkg_info)
     db.session.commit()
+    pkg_build_path = '/var/www/html/Test_Packages/'
     pkgbuild = pkg_info.pkgbuild_id
+    
     shutil.rmtree(pkg_build_path+str(pkgbuild))
 
     flash('Package has been deleted!','success')
     return redirect(url_for('home'))
+
+#Move to Final Package
+@app.route('/move_final_pkg/<int:pkg_id>',methods=['POST','GET'])
+def move_final_pkg(pkg_id):
+    pkg_info = Pkgdetails.query.get_or_404(pkg_id)
+    pkgbuild = pkg_info.pkgbuild_id
+    pkg_build_path = '/var/www/html/Test_Packages/'
+    os.makedirs(pkg_build_path+str(pkgbuild)+'/Final')
+
+    if pkg_info.author != current_user:
+        abort(403)
+
+    for root, dirs, files in os.walk(pkg_build_path+str(pkgbuild)):
+        for file in files:
+            if file.endswith(".sq"):
+                sq_path = os.path.join(root, file)
+                cmd = "mv "+sq_path+" "+pkg_build_path+str(pkgbuild)+'/Final/'
+                proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                o,e = proc.communicate()
+
+    flash('Package moved to Final Stage!','success')          
+    return redirect(url_for('home'))
+
+#Logs
+@app.route('/logs',methods=['POST','GET'])
+@login_required
+def logs():
+    
+    page = request.args.get('page',1,type=int)
+    log_count = db.session.query(Logs).count()
+    logs_info = Logs.query.order_by(Logs.date_removed.desc()).paginate(page=page,per_page=4)
+
+    return render_template('log.html',title='Logs',logs_info=logs_info,log_count=log_count)
 
 #Logout
 @app.route('/logout')
